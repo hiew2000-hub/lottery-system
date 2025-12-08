@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>轮盘抽签 - 排除已抽名字</title>
+    <title>轮盘抽签系统</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -30,18 +30,18 @@
             font-size: 24px;
         }
         
-        /* 当前抽签人显示 */
+        /* 当前抽签人 */
         .current-user {
-            background: #f1f8ff;
+            background: #e3f2fd;
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 20px;
-            border-left: 5px solid #6a11cb;
+            border: 2px solid #2196f3;
         }
         .current-user span {
             font-weight: bold;
-            color: #6a11cb;
-            font-size: 18px;
+            color: #1976d2;
+            font-size: 20px;
         }
         
         /* 轮盘 */
@@ -94,10 +94,27 @@
             z-index: 2;
         }
         
+        /* 状态信息 */
+        .status-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .status-text {
+            font-size: 16px;
+            color: #666;
+        }
+        .status-number {
+            font-weight: bold;
+            color: #6a11cb;
+            font-size: 24px;
+        }
+        
         /* 结果 */
         #result {
             margin: 25px 0;
-            min-height: 100px;
+            min-height: 120px;
         }
         #resultText {
             font-size: 28px;
@@ -107,60 +124,89 @@
             min-height: 50px;
         }
         
-        /* 按钮 */
-        button {
+        /* 按钮 - 统一样式 */
+        .btn-confirm {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            display: inline-block;
+            font-weight: bold;
+            min-width: 200px;
+        }
+        .btn-confirm:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 10px 20px rgba(0, 176, 155, 0.3); 
+        }
+        .btn-confirm:disabled { 
+            background: #ccc; 
+            cursor: not-allowed; 
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
             background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 10px 25px;
             font-size: 16px;
             border-radius: 50px;
             cursor: pointer;
             margin: 8px;
             transition: all 0.3s;
         }
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3); }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        .admin-btn { background: #ff4757; }
-        
-        /* 状态显示 */
-        .status {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            font-size: 14px;
+        .btn-secondary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3); 
         }
-        .remaining {
-            color: #6a11cb;
-            font-weight: bold;
-            font-size: 18px;
+        
+        .btn-danger { 
+            background: #ff4757; 
+        }
+        .btn-danger:hover { 
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3); 
         }
         
         /* 名字选择 */
-        .name-selection {
+        .name-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
             margin: 20px 0;
-            padding: 15px;
-            background: #f1f8ff;
-            border-radius: 10px;
         }
         .name-option {
-            display: inline-block;
             background: #6a11cb;
             color: white;
-            padding: 8px 16px;
-            margin: 5px;
-            border-radius: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s;
+            min-width: 100px;
         }
         .name-option:hover {
             background: #2575fc;
             transform: scale(1.05);
         }
+        .name-option.selected {
+            background: #ff4757;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
+        }
+        .name-option.taken {
+            background: #95a5a6;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
         
-        /* 隐藏/显示控制 */
-        .hidden { display: none; }
+        /* 隐藏/显示 */
+        .hidden { display: none !important; }
         
         /* 烟花 */
         .firework {
@@ -171,45 +217,99 @@
             pointer-events: none;
             z-index: 1000;
         }
+        
+        /* 完成提示 */
+        .completion-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        /* 步骤指示器 */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        .step.active {
+            background: #6a11cb;
+            color: white;
+        }
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: #e9ecef;
+            margin-top: 14px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 标题 -->
         <h1>🎡 轮盘抽签系统</h1>
         
-        <!-- 当前抽签人显示 -->
+        <!-- 步骤指示器 -->
+        <div class="step-indicator">
+            <div class="step" id="step1">1</div>
+            <div class="step-line"></div>
+            <div class="step" id="step2">2</div>
+            <div class="step-line"></div>
+            <div class="step" id="step3">3</div>
+        </div>
+        
+        <!-- 当前抽签人 -->
         <div class="current-user hidden" id="currentUserDisplay">
-            当前抽签人：<span id="currentUserName">未知</span>
+            🧑‍💼 当前抽签人：<span id="currentUserName">未知</span>
         </div>
         
         <!-- 第一步：选择抽签人 -->
         <div id="selectUserSection">
-            <div class="name-selection">
-                <p style="margin-bottom: 10px;">请选择正在抽签的人：</p>
-                <div id="userOptions">
-                    <!-- 名字选项会动态生成 -->
-                </div>
+            <h3>第一步：选择你的名字</h3>
+            <p style="color: #666; margin-bottom: 15px;">请从下方选择你的名字</p>
+            
+            <div class="name-options" id="userOptions">
+                <!-- 动态生成 -->
             </div>
-            <button onclick="confirmUser()" id="confirmBtn">确认并开始抽签</button>
+            
+            <button class="btn-confirm" onclick="confirmUser()" id="confirmBtn">
+                ✅ 确认并开始抽签
+            </button>
         </div>
         
-        <!-- 第二步：轮盘抽签 -->
+        <!-- 第二步：抽签界面 -->
         <div id="lotterySection" class="hidden">
+            <h3>第二步：开始抽签</h3>
+            
+            <!-- 状态信息 -->
+            <div class="status-box">
+                <p class="status-text">剩余可抽人数：<span class="status-number" id="remainingCount">0</span></p>
+                <p style="font-size: 14px; color: #888; margin-top: 5px;">
+                    *系统自动排除已抽中的人和你自己
+                </p>
+            </div>
+            
             <!-- 轮盘 -->
             <div class="wheel-container">
                 <div class="pointer"></div>
                 <div id="wheel" onclick="startSpin()">
                     <div class="wheel-center">点击抽签</div>
                 </div>
-            </div>
-            
-            <!-- 状态显示 -->
-            <div class="status">
-                <p>剩余可抽人数：<span class="remaining" id="remainingCount">0</span></p>
-                <p style="font-size: 12px; color: #666; margin-top: 5px;">
-                    *系统自动排除所有已抽中的名字
-                </p>
             </div>
             
             <!-- 结果 -->
@@ -219,31 +319,60 @@
             
             <!-- 操作按钮 -->
             <div>
-                <button onclick="startSpin()" id="spinBtn">开始抽签</button>
-                <button onclick="nextUser()" id="nextBtn">下一个人抽签</button>
-                <button onclick="showAdminPanel()" class="admin-btn">管理员重置</button>
+                <button class="btn-secondary" onclick="startSpin()" id="spinBtn">开始抽签</button>
+                <button class="btn-confirm" onclick="confirmResult()" id="resultBtn">
+                    ✅ 确认结果
+                </button>
+                <button class="btn-secondary btn-danger" onclick="showAdminPanel()">管理员重置</button>
             </div>
+        </div>
+        
+        <!-- 第三步：完成界面 -->
+        <div id="completeSection" class="hidden">
+            <h3>第三步：完成抽签</h3>
+            
+            <div class="completion-message" id="finalResult">
+                <!-- 最终结果显示在这里 -->
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <p style="color: #666; margin-bottom: 15px;">
+                    🎉 抽签已完成！请下一位开始抽签。
+                </p>
+            </div>
+            
+            <button class="btn-confirm" onclick="nextUser()">
+                🔄 下一个人开始抽签
+            </button>
+            
+            <div style="margin-top: 15px;">
+                <button class="btn-secondary" onclick="showAdminPanel()">管理员重置</button>
+            </div>
+        </div>
+        
+        <!-- 完成提示 -->
+        <div id="allCompletionMessage" class="completion-message hidden">
+            🎉 所有人员都已抽签完成！
         </div>
         
         <!-- 管理员面板 -->
         <div id="adminPanel" class="hidden" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
             <h3 style="color: #ff4757; margin-bottom: 10px;">系统重置</h3>
-            <p>输入密码：admin123</p>
-            <input type="password" id="resetPassword" 
-                   style="padding: 8px; width: 180px; border: 2px solid #6a11cb; border-radius: 5px; margin: 10px 0;">
+            <input type="password" id="resetPassword" placeholder="输入密码：admin123"
+                   style="padding: 8px; width: 200px; border: 2px solid #6a11cb; border-radius: 5px; margin: 10px 0;">
             <div>
-                <button onclick="resetSystem()" style="background: #ff4757;">确认重置</button>
-                <button onclick="hideAdminPanel()" style="background: #95a5a6;">取消</button>
+                <button class="btn-secondary btn-danger" onclick="resetSystem()">确认重置</button>
+                <button class="btn-secondary" onclick="hideAdminPanel()">取消</button>
             </div>
         </div>
         
         <!-- 使用说明 -->
         <div style="margin-top: 30px; color: #666; font-size: 14px; text-align: left;">
-            <strong>💡 使用说明：</strong>
-            <p>1. 先选择当前正在抽签的人（只是记录）</p>
-            <p>2. 系统从<b>还没被抽到的人</b>中随机抽取</p>
-            <p>3. 已抽中的名字自动排除，不会重复</p>
-            <p>4. 理论上不会抽到自己（因为自己如果已被抽就不会在池中）</p>
+            <strong>📋 使用流程：</strong>
+            <p>1. 选择名字 → 点击"✅ 确认并开始抽签"</p>
+            <p>2. 点击轮盘抽签 → 查看结果</p>
+            <p>3. 点击"✅ 确认结果" → 完成本次抽签</p>
+            <p>4. 点击"🔄 下一个人开始抽签"让下一位继续</p>
         </div>
     </div>
 
@@ -251,94 +380,136 @@
         // ============ 配置 ============
         const allNames = [
             "qiu", "jianhui", "peggie", "jiaxin", 
-            "siowyao", "jingru", "xueyong",
+            "siowyao", "jingru", "xueyong"
         ];
         
         // ============ 变量 ============
         let currentUser = "";      // 当前抽签人
         let drawnNames = [];       // 已抽中的名字
-        let availableNames = [];   // 可抽取的名字（排除已抽的）
+        let lastResult = "";       // 最后一次抽签结果
         
         // ============ 初始化 ============
         window.onload = function() {
             loadData();
             renderUserOptions();
-            updateRemainingCount();
+            updateStatus();
+            updateStepIndicator(1);
         };
         
         function loadData() {
             drawnNames = JSON.parse(localStorage.getItem('drawnNames') || '[]');
-            
-            // 计算可抽取的名字（排除所有已抽中的）
-            availableNames = allNames.filter(name => !drawnNames.includes(name));
-            
-            console.log("已抽中的名字:", drawnNames);
-            console.log("可抽取的名字:", availableNames);
         }
         
-        // 渲染抽签人选项
+        // 获取可抽取名单（排除：已抽中的 + 自己）
+        function getAvailableNames() {
+            return allNames.filter(name => 
+                !drawnNames.includes(name) && name !== currentUser
+            );
+        }
+        
+        // 渲染用户选项
         function renderUserOptions() {
             const container = document.getElementById('userOptions');
             container.innerHTML = '';
             
-            // 显示所有原始名单中的名字作为选项
+            // 检查是否所有人都已抽过
+            const allTaken = allNames.every(name => drawnNames.includes(name));
+            if (allTaken) {
+                container.innerHTML = '<p style="color:#28a745; padding:20px;">🎉 所有人员都已抽签完成！</p>';
+                document.getElementById('allCompletionMessage').classList.remove('hidden');
+                document.getElementById('confirmBtn').disabled = true;
+                return;
+            }
+            
+            // 显示还未抽签的人
             allNames.forEach(name => {
-                const option = document.createElement('div');
-                option.className = 'name-option';
-                option.textContent = name;
-                option.onclick = () => selectUser(name, option);
-                container.appendChild(option);
+                // 只显示还没抽过签的人
+                if (!drawnNames.includes(name)) {
+                    const option = document.createElement('div');
+                    option.className = 'name-option';
+                    option.textContent = name;
+                    option.onclick = () => selectUser(name, option);
+                    container.appendChild(option);
+                }
             });
+            
+            // 如果当前用户已被抽过，清除选择
+            if (currentUser && drawnNames.includes(currentUser)) {
+                currentUser = "";
+                document.getElementById('confirmBtn').disabled = true;
+            }
         }
         
-        // 选择抽签人
+        // 选择用户
         function selectUser(name, element) {
             // 移除其他选择
             document.querySelectorAll('.name-option').forEach(opt => {
-                opt.style.background = '#6a11cb';
+                opt.classList.remove('selected');
             });
             
             // 标记当前选择
-            element.style.background = '#2575fc';
+            element.classList.add('selected');
             currentUser = name;
             
             // 启用确认按钮
             document.getElementById('confirmBtn').disabled = false;
         }
         
-        // 确认抽签人并开始
+        // 步骤指示器
+        function updateStepIndicator(step) {
+            // 重置所有步骤
+            document.getElementById('step1').classList.remove('active');
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step3').classList.remove('active');
+            
+            // 激活当前步骤
+            if (step >= 1) document.getElementById('step1').classList.add('active');
+            if (step >= 2) document.getElementById('step2').classList.add('active');
+            if (step >= 3) document.getElementById('step3').classList.add('active');
+        }
+        
+        // 确认用户并开始
         function confirmUser() {
             if (!currentUser) {
-                alert("请先选择抽签人！");
+                alert("请先选择你的名字！");
                 return;
             }
             
-            // 显示当前抽签人
+            // 显示当前用户
             document.getElementById('currentUserName').textContent = currentUser;
             document.getElementById('currentUserDisplay').classList.remove('hidden');
             
             // 切换到抽签界面
             document.getElementById('selectUserSection').classList.add('hidden');
             document.getElementById('lotterySection').classList.remove('hidden');
+            document.getElementById('completeSection').classList.add('hidden');
+            document.getElementById('allCompletionMessage').classList.add('hidden');
             
-            updateRemainingCount();
+            updateStepIndicator(2);
+            updateStatus();
         }
         
-        // 更新剩余人数显示
-        function updateRemainingCount() {
-            const count = availableNames.length;
-            document.getElementById('remainingCount').textContent = count;
+        // 更新状态显示
+        function updateStatus() {
+            const availableNames = getAvailableNames();
+            const availableCount = availableNames.length;
             
-            if (count === 0) {
+            document.getElementById('remainingCount').textContent = availableCount;
+            
+            // 如果没有可抽的人了（只剩自己）
+            if (availableCount === 0) {
                 document.getElementById('resultText').innerHTML = 
-                    '<span style="color:#ff4757;">🎉 所有名字都已抽完！</span>';
+                    '<div style="color:#ff6b6b; font-size:20px; padding:20px;">🎉 你是最后一个！已无其他人可抽。</div>';
+                document.getElementById('spinBtn').disabled = true;
             }
         }
         
         // ============ 抽签功能 ============
         function startSpin() {
+            const availableNames = getAvailableNames();
+            
             if (availableNames.length === 0) {
-                alert("所有名字都已抽完！");
+                alert("没有可抽取的人员！");
                 return;
             }
             
@@ -357,79 +528,116 @@
             
             // 3秒后显示结果
             setTimeout(() => {
-                // 随机选择一个可抽取的名字
+                // 随机选择一个
                 const randomIndex = Math.floor(Math.random() * availableNames.length);
                 const selectedName = availableNames[randomIndex];
+                
+                // 保存最后结果
+                lastResult = selectedName;
                 
                 // 显示结果
                 document.getElementById('resultText').innerHTML = `
                     <div style="font-size: 22px; color: #2d3436; margin-bottom: 8px;">
-                        ${currentUser} 抽到：
+                        🎯 抽签结果：
                     </div>
                     <div style="font-size: 48px; color: #ff4757; font-weight: bold;">
-                        ${selectedName}
+                        ${currentUser} → ${selectedName}
                     </div>
                     <div style="font-size: 14px; color: #20c997; margin-top: 10px;">
-                        ✅ 从剩余 ${availableNames.length} 人中抽取
+                        ✅ 点击下方"确认结果"按钮完成本次抽签
                     </div>
                 `;
                 
-                // 保存结果
-                drawnNames.push(selectedName);
-                localStorage.setItem('drawnNames', JSON.stringify(drawnNames));
-                
-                // 从可抽取名单中移除
-                availableNames.splice(randomIndex, 1);
-                
                 // 更新按钮状态
-                spinBtn.textContent = '已抽签';
-                spinBtn.style.background = '#ccc';
+                spinBtn.textContent = '开始抽签';
+                spinBtn.disabled = false;
                 
-                updateRemainingCount();
-                createFireworks();
-                
-                // 检查是否抽到了自己（理论上不会发生，但做个验证）
+                // 验证绝对不会抽到自己
                 if (selectedName === currentUser) {
                     setTimeout(() => {
-                        alert("⚠️ 注意：抽到了自己！这可能是数据错误。");
+                        alert("⚠️ 系统错误：抽到了自己！请重置系统。");
                     }, 1000);
                 }
                 
+                createFireworks();
+                
             }, 3000);
+        }
+        
+        // 确认结果（新的确认按钮）
+        function confirmResult() {
+            if (!lastResult) {
+                alert("请先进行抽签！");
+                return;
+            }
+            
+            // 保存到已抽名单
+            drawnNames.push(lastResult);
+            localStorage.setItem('drawnNames', JSON.stringify(drawnNames));
+            
+            // 显示最终结果
+            document.getElementById('finalResult').innerHTML = `
+                <div style="font-size: 20px; margin-bottom: 10px;">
+                    🎉 抽签完成！
+                </div>
+                <div style="font-size: 32px; font-weight: bold;">
+                    ${currentUser} 抽到了 ${lastResult}
+                </div>
+                <div style="font-size: 14px; margin-top: 10px; color: #0c5460;">
+                    ✅ 结果已保存，请下一位开始抽签
+                </div>
+            `;
+            
+            // 切换到完成界面
+            document.getElementById('lotterySection').classList.add('hidden');
+            document.getElementById('completeSection').classList.remove('hidden');
+            
+            updateStepIndicator(3);
+            
+            // 显示确认提示
+            alert(`✅ ${currentUser} 的抽签结果已确认！\n\n抽到了：${lastResult}`);
         }
         
         // 下一个人抽签
         function nextUser() {
             // 重置当前用户
             currentUser = "";
+            lastResult = "";
             
-            // 重新加载数据（检查是否有新变化）
+            // 重新加载数据
             loadData();
             
             // 切换回选择界面
-            document.getElementById('lotterySection').classList.add('hidden');
             document.getElementById('selectUserSection').classList.remove('hidden');
+            document.getElementById('completeSection').classList.add('hidden');
             document.getElementById('currentUserDisplay').classList.add('hidden');
+            document.getElementById('adminPanel').classList.add('hidden');
             
             // 重置轮盘
             document.getElementById('wheel').style.transform = 'rotate(0deg)';
-            document.getElementById('spinBtn').disabled = false;
-            document.getElementById('spinBtn').textContent = '开始抽签';
-            document.getElementById('spinBtn').style.background = 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
+            
+            // 重置按钮状态
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = false;
+            spinBtn.textContent = '开始抽签';
             
             // 重置选择
             document.querySelectorAll('.name-option').forEach(opt => {
-                opt.style.background = '#6a11cb';
+                opt.classList.remove('selected');
             });
             document.getElementById('confirmBtn').disabled = true;
             
             // 重新渲染选项
             renderUserOptions();
-            updateRemainingCount();
+            updateStatus();
             
             // 清空结果
             document.getElementById('resultText').innerHTML = '';
+            document.getElementById('finalResult').innerHTML = '';
             
+            updateStepIndicator(1);
+            
+            // 显示提示
             alert("🔄 请下一位选择名字开始抽签！");
         }
         
@@ -454,32 +662,37 @@
                     // 重置变量
                     drawnNames = [];
                     currentUser = "";
-                    availableNames = [...allNames];
+                    lastResult = "";
                     
                     // 重置界面
-                    document.getElementById('lotterySection').classList.add('hidden');
                     document.getElementById('selectUserSection').classList.remove('hidden');
+                    document.getElementById('lotterySection').classList.add('hidden');
+                    document.getElementById('completeSection').classList.add('hidden');
                     document.getElementById('currentUserDisplay').classList.add('hidden');
                     document.getElementById('adminPanel').classList.add('hidden');
+                    document.getElementById('allCompletionMessage').classList.add('hidden');
                     
                     // 重置轮盘和按钮
                     document.getElementById('wheel').style.transform = 'rotate(0deg)';
-                    document.getElementById('spinBtn').disabled = false;
-                    document.getElementById('spinBtn').textContent = '开始抽签';
-                    document.getElementById('spinBtn').style.background = 'linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)';
+                    const spinBtn = document.getElementById('spinBtn');
+                    spinBtn.disabled = false;
+                    spinBtn.textContent = '开始抽签';
                     
                     // 重置选择
                     document.querySelectorAll('.name-option').forEach(opt => {
-                        opt.style.background = '#6a11cb';
+                        opt.classList.remove('selected');
                     });
                     document.getElementById('confirmBtn').disabled = true;
                     
                     // 重新渲染
                     renderUserOptions();
-                    updateRemainingCount();
+                    updateStatus();
                     
                     // 清空结果
                     document.getElementById('resultText').innerHTML = '';
+                    document.getElementById('finalResult').innerHTML = '';
+                    
+                    updateStepIndicator(1);
                     
                     alert("✅ 系统已重置！可以重新开始抽签。");
                 }
@@ -513,39 +726,19 @@
             }
         }
         
-        // ============ 辅助功能 ============
-        // 查看当前状态（调试用）
-        function showStatus() {
-            console.log("当前状态:");
-            console.log("- 所有名字:", allNames);
-            console.log("- 已抽中的:", drawnNames);
-            console.log("- 可抽取的:", availableNames);
-            console.log("- 当前抽签人:", currentUser);
-            
-            let msg = "📊 当前状态：\n\n";
-            msg += `总人数：${allNames.length}\n`;
-            msg += `已抽中：${drawnNames.length}人\n`;
-            msg += `可抽取：${availableNames.length}人\n`;
-            msg += `当前抽签人：${currentUser || "未选择"}\n\n`;
-            msg += `已抽中的名字：${drawnNames.join(', ') || "无"}`;
-            
-            alert(msg);
-        }
-        
-        // 键盘快捷键
+        // ============ 键盘快捷键 ============
         document.addEventListener('keydown', function(e) {
-            // Ctrl+Alt+S 查看状态
-            if (e.ctrlKey && e.altKey && e.key === 's') {
-                showStatus();
-                e.preventDefault();
-            }
-            
             // Ctrl+Alt+R 显示重置面板
             if (e.ctrlKey && e.altKey && e.key === 'r') {
                 showAdminPanel();
                 e.preventDefault();
             }
+            
+            // ESC 隐藏所有面板
+            if (e.key === 'Escape') {
+                hideAdminPanel();
+            }
         });
     </script>
 </body>
-    </html>
+</html>
